@@ -1,0 +1,97 @@
+// Job aggregator schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  displayName  String?
+  passwordHash String
+  createdAt    DateTime  @default(now())
+
+  // Brute-force protection: locked when failedLoginAttempts crosses
+  // a threshold; reset on successful login.
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+
+  companies    Company[]
+  sessions     Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  // Hashed session token; the cookie holds the plaintext token.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Company {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name          String
+  // ATS detection
+  atsType       String   // "greenhouse" | "lever" | "ashby"
+  atsSlug       String   // e.g. "stripe", "netflix"
+  sourceUrl     String   // original URL the user pasted
+  websiteUrl    String?
+  logoUrl       String?
+  // sync state
+  lastSyncedAt  DateTime?
+  lastSyncError String?
+  createdAt     DateTime @default(now())
+
+  jobs          Job[]
+
+  // Same company can be tracked by multiple users.
+  @@unique([userId, atsType, atsSlug])
+  @@index([userId])
+  @@index([name])
+}
+
+model Job {
+  id            String   @id @default(cuid())
+  externalId    String   // ID from the source ATS
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  title         String
+  location      String?
+  department    String?
+  employmentType String?
+  remote        Boolean  @default(false)
+  url           String   // apply link on the original ATS
+  description   String?  // raw HTML or text snippet
+  postedAt      DateTime?
+
+  // tracking
+  firstSeenAt   DateTime @default(now())
+  lastSeenAt    DateTime @default(now())
+  isActive      Boolean  @default(true)
+
+  // user-set status: "saved" | "applied" | "interviewing" | "rejected" | "offer" | null
+  userStatus    String?
+  userNote      String?
+  userStatusAt  DateTime?
+
+  // AI-generated summary, lazily computed and cached.
+  aiSummary     String?
+
+  @@unique([companyId, externalId])
+  @@index([title])
+  @@index([location])
+  @@index([isActive, postedAt])
+}

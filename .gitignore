@@ -22,7 +22,10 @@
 
 # misc
 .DS_Store
+Thumbs.db
+Desktop.ini
 *.pem
+*.log
 
 # debug
 npm-debug.log*
@@ -39,3 +42,24 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Prisma generated client — output dir set in prisma/schema.prisma
+# (regenerated automatically by `npm install` via the postinstall hook
+# and on every Vercel build).
+/lib/generated/
+
+# Prisma local SQLite dev database (legacy — Postgres now, but guard
+# against accidentally committing one if anyone re-enables sqlite locally).
+/prisma/*.db
+/prisma/*.db-journal
+/dev.db
+/dev.db-journal
+*.db
+*.db-journal
+
+# IDE / editor
+/.vscode/
+/.idea/
+*.swp
+*.swo
+*~
