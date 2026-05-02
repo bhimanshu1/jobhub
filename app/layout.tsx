@@ -28,7 +28,15 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body
+        // Some browser extensions (Microsoft Editor / Bing Toolbar /
+        // Grammarly / etc.) inject attributes onto <body> before React
+        // hydrates, causing a benign hydration-mismatch warning. Suppressing
+        // here only affects body's own attribute reconciliation; children
+        // hydrate normally.
+        suppressHydrationWarning
+        className="min-h-full flex flex-col bg-background text-foreground"
+      >
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <footer className="border-t border-black/10 dark:border-white/10 mt-12">

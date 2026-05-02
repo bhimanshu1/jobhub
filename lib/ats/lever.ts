@@ -26,7 +26,14 @@ export async function fetchLeverJobs(slug: string): Promise<FetchedJob[]> {
   const url = `https://api.lever.co/v0/postings/${encodeURIComponent(
     slug,
   )}?mode=json`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "Accept-Encoding": "gzip, deflate",
+    },
+    cache: "no-store",
+    signal: AbortSignal.timeout(45_000),
+  });
   if (!res.ok) {
     throw new Error(`Lever fetch failed for "${slug}": ${res.status}`);
   }

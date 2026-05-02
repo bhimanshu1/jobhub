@@ -34,6 +34,26 @@ function isAtsHost(host: string): boolean {
   return false;
 }
 
+/** Format an Error including its underlying `cause` if any. Node's
+ *  `fetch` throws "fetch failed" with the actual ECONNRESET/ETIMEDOUT/etc.
+ *  hidden in `cause`. */
+function describeError(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  const cause = (err as Error & { cause?: unknown }).cause;
+  if (!cause) return err.message;
+  const causeMsg =
+    cause instanceof Error
+      ? `${cause.name}: ${cause.message}`
+      : String(cause);
+  const causeCode =
+    cause instanceof Error
+      ? (cause as Error & { code?: string; errno?: string }).code ??
+        (cause as Error & { code?: string; errno?: string }).errno
+      : undefined;
+  const tail = causeCode ? `${causeMsg} [${causeCode}]` : causeMsg;
+  return `${err.message} — ${tail.slice(0, 500)}`;
+}
+
 /** Reduce "careers.airbnb.com" → "airbnb.com". Keeps known 2-part TLDs. */
 function apexDomain(host: string): string {
   const parts = host.split(".").filter(Boolean);
@@ -77,14 +97,18 @@ export async function syncCompany(companyId: string): Promise<SyncResult> {
   try {
     fetched = await fetchJobsFor(company.atsType as AtsType, company.atsSlug);
   } catch (err) {
+    // Node's fetch throws "fetch failed" with the real reason in `err.cause`.
+    // Surface that so we get something actionable instead of an opaque message.
+    const message = describeError(err);
+    console.error(`[sync] ${company.name} (${company.atsType}/${company.atsSlug}):`, err);
     await prisma.company.update({
       where: { id: companyId },
       data: {
         lastSyncedAt: new Date(),
-        lastSyncError: err instanceof Error ? err.message : String(err),
+        lastSyncError: message,
       },
     });
-    throw err;
+    throw new Error(message);
   }
 
   const now = new Date();

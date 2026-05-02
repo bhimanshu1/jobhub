@@ -22,7 +22,10 @@ export function CompanyRowActions({ id }: { id: string }) {
   return (
     <div className="flex items-center gap-2">
       {status && !status.ok && (
-        <span className="text-xs text-red-600 dark:text-red-400 max-w-[20ch] truncate" title={status.error}>
+        <span
+          className="text-xs text-red-600 dark:text-red-400 max-w-[60ch] break-words"
+          title={status.error}
+        >
           {status.error}
         </span>
       )}

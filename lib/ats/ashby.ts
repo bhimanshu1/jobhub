@@ -29,7 +29,14 @@ export async function fetchAshbyJobs(slug: string): Promise<FetchedJob[]> {
   const url = `https://api.ashbyhq.com/posting-api/job-board/${encodeURIComponent(
     slug,
   )}?includeCompensation=false`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "Accept-Encoding": "gzip, deflate",
+    },
+    cache: "no-store",
+    signal: AbortSignal.timeout(45_000),
+  });
   if (!res.ok) {
     throw new Error(`Ashby fetch failed for "${slug}": ${res.status}`);
   }

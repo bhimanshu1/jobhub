@@ -26,7 +26,12 @@ export async function fetchGreenhouseJobs(slug: string): Promise<FetchedJob[]> {
     slug,
   )}/jobs?content=true`;
   const res = await fetch(url, {
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      "Accept-Encoding": "gzip, deflate",
+    },
+    cache: "no-store",
+    signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) {
     throw new Error(`Greenhouse fetch failed for "${slug}": ${res.status}`);
